@@ -3,7 +3,9 @@ import requests
 import json
 from datetime import date, datetime, timedelta
 from decouple import config
-from DataReader.cache import Cache
+from DataReader.controller.cache import Cache
+from DataReader.controller.regression import Processor
+from DataReader.constant import Constant
 
 def get_history_data(request):
     redisCache = Cache()
@@ -26,7 +28,7 @@ def get_history_data(request):
     parmameters = {
         'sort': 'date',
         'q': 'code:' + code + '~date:gte:' + strLastYear + '~date:lte:' + strYesterday,
-        'size': 200,
+        'size': Constant.NUMBER_OF_HISTORY,
         'page': 1
     }
 
@@ -47,13 +49,8 @@ def get_history_data(request):
     return result
 
 def get_analysed_data_in_json(data):
-    return_data = data
+    processor = Processor()
 
-    return json.dumps(return_data)
+    result = processor.linear_regression(data)
 
-def how_many_seconds_until_midnight():
-    """Get the number of seconds until midnight."""
-    tomorrow = datetime.now() + timedelta(1)
-    midnight = datetime(year=tomorrow.year, month=tomorrow.month, 
-                        day=tomorrow.day, hour=0, minute=0, second=0)
-    return (midnight - datetime.now()).seconds
+    return json.dumps(result)
