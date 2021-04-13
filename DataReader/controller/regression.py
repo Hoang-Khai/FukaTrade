@@ -48,11 +48,25 @@ class Processor:
         delta_y_intercept_1 = t_score_1 * delta_y_intercept_no_score
         delta_y_intercept_2 = t_score_2 * delta_y_intercept_no_score
 
-        return {
-            'below-1': {'slope': slope - delta_slope_1, 'y-intercept': y_intercept - delta_y_intercept_1},
-            'line-1': {'slope': slope, 'y-intercept': y_intercept},
-            'above-1': {'slope': slope + delta_slope_1, 'y-intercept': y_intercept + delta_y_intercept_1},
-            'below-2': {'slope': slope - delta_slope_2, 'y-intercept': y_intercept - delta_y_intercept_2},
-            'line-2': {'slope': slope, 'y-intercept': y_intercept},
-            'above-2': {'slope': slope + delta_slope_2, 'y-intercept': y_intercept + delta_y_intercept_2}
+        result = {
+            'below-1': {'slope': self.round005(slope - delta_slope_1), 'y-intercept': self.round005(y_intercept - delta_y_intercept_1)},
+            'line-1': {'slope': self.round005(slope), 'y-intercept': self.round005(y_intercept)},
+            'above-1': {'slope': self.round005(slope + delta_slope_1), 'y-intercept': self.round005(y_intercept + delta_y_intercept_1)},
+            'below-2': {'slope': self.round005(slope - delta_slope_2), 'y-intercept': self.round005(y_intercept - delta_y_intercept_2)},
+            'line-2': {'slope': self.round005(slope), 'y-intercept': self.round005(y_intercept)},
+            'above-2': {'slope': self.round005(slope + delta_slope_2), 'y-intercept': self.round005(y_intercept + delta_y_intercept_2)}
         }
+
+        result['point_must_sell'] = self.round05(result['above-2']['slope'] * Constant.DAY_ESTIMATE + result['above-2']['y-intercept'])
+        result['point_should_sell'] = self.round05(result['above-1']['slope'] * Constant.DAY_ESTIMATE + result['above-1']['y-intercept'])
+        result['point_must_buy'] = self.round05(result['below-2']['slope'] * Constant.DAY_ESTIMATE + result['below-2']['y-intercept'])
+        result['point_should_buy'] = self.round05(result['below-1']['slope'] * Constant.DAY_ESTIMATE + result['below-1']['y-intercept'])
+        result['point_estimate'] = self.round05(result['line-1']['slope'] * Constant.DAY_ESTIMATE + result['line-1']['y-intercept'])
+
+        return result
+
+    def round05(self, number):
+        return (round(number * 20) / 20)
+
+    def round005(self, number):
+        return round(number, 3)

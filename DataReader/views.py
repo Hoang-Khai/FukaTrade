@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 import requests
 import json
 from datetime import date, datetime, timedelta
@@ -17,7 +17,7 @@ def get_history_data(request):
 
     return_data = redisCache.getCache(key)
     if return_data is not None:
-        return HttpResponse(return_data, status=200)
+        return JsonResponse(json.loads(return_data))
 
     yesterday = date.today() - timedelta(days=1)
     strYesterday = yesterday.strftime('%Y-%m-%d')
@@ -40,12 +40,17 @@ def get_history_data(request):
             result = HttpResponse(json.dumps({'message': 'Not found any data'}), status=204)
         else:
             data = [daily_data['adClose'] for daily_data in history_data['data']]
-            return_data = get_analysed_data_in_json(data)
-            redisCache.setCache(key, return_data)
-            result = HttpResponse(return_data, status=200)
+            return_data = {'normal':get_analysed_data_in_json(data)}
+            data = [daily_data['adHigh'] for daily_data in history_data['data']]
+            return_data['high'] = get_analysed_data_in_json(data)
+            data = [daily_data['adLow'] for daily_data in history_data['data']]
+            return_data['low'] = get_analysed_data_in_json(data)
+            redisCache.setCache(key, json.dumps(return_data))
+            result =  JsonResponse(return_data)
     else:
         result = HttpResponse(json.dumps({'message': 'An error occur'}), status=500)
 
+    result['CONTENT_TYPE'] = 'application/json'
     return result
 
 def get_analysed_data_in_json(data):
@@ -53,4 +58,4 @@ def get_analysed_data_in_json(data):
 
     result = processor.linear_regression(data)
 
-    return json.dumps(result)
+    return result
